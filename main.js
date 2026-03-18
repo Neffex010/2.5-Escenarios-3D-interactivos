@@ -79,7 +79,7 @@ document.body.appendChild(stats.dom);
 // =========================
 const GRAVITY = 30;
 const NUM_SPHERES = 100;
-const SPHERE_RADIUS = 0.12;
+const DEFAULT_SPHERE_RADIUS = 0.12; // radio original de la geometría
 const STEPS_PER_FRAME = 5;
 const MAX_PLAYER_SPEED = 15;
 
@@ -93,6 +93,7 @@ const params = {
     ballBounce: 0.8,
     ballDamping: 1.0,
     ballColor: '#ff6600', // naranja
+    ballSize: DEFAULT_SPHERE_RADIUS,
     // Lanzamiento
     throwStrength: 1.0,
     // Visual
@@ -218,13 +219,13 @@ let particleVelocities = [];
 // =========================
 // PELOTAS (color inicial naranja)
 // =========================
-const sphereGeometry = new THREE.IcosahedronGeometry(SPHERE_RADIUS, 4);
+const sphereGeometry = new THREE.IcosahedronGeometry(DEFAULT_SPHERE_RADIUS, 4);
 const sphereMaterial = new THREE.MeshLambertMaterial({ color: params.ballColor });
 
 const spheres = [];
 
 for (let i = 0; i < NUM_SPHERES; i++) {
-    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial.clone()); // clon para poder cambiar color individual si se desea
+    const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial.clone());
     sphere.castShadow = true;
     sphere.receiveShadow = true;
     sphere.visible = false;
@@ -232,7 +233,7 @@ for (let i = 0; i < NUM_SPHERES; i++) {
 
     spheres.push({
         mesh: sphere,
-        collider: new THREE.Sphere(new THREE.Vector3(0, -100, 0), SPHERE_RADIUS),
+        collider: new THREE.Sphere(new THREE.Vector3(0, -100, 0), DEFAULT_SPHERE_RADIUS),
         velocity: new THREE.Vector3(),
         active: false
     });
@@ -260,6 +261,13 @@ ballFolder.add(params, 'ballDamping', 0.2, 3.0, 0.01).name('Fricción');
 ballFolder.addColor(params, 'ballColor').name('Color').onChange(value => {
     spheres.forEach(s => {
         if (s.mesh.material) s.mesh.material.color.set(value);
+    });
+});
+ballFolder.add(params, 'ballSize', 0.05, 0.5, 0.01).name('Tamaño').onChange(value => {
+    const scale = value / DEFAULT_SPHERE_RADIUS;
+    spheres.forEach(s => {
+        s.mesh.scale.set(scale, scale, scale);
+        s.collider.radius = value;
     });
 });
 ballFolder.open();
@@ -478,7 +486,7 @@ function spheresCollisions() {
                 const v1 = vector2.copy(normal).multiplyScalar(normal.dot(s1.velocity));
                 const v2 = vector3.copy(normal).multiplyScalar(normal.dot(s2.velocity));
 
-                const rest = params.ballBounce; // usamos el rebote del balón
+                const rest = params.ballBounce;
 
                 s1.velocity.add(v2.clone().multiplyScalar(1 + rest)).sub(v1.clone().multiplyScalar(1 + rest));
                 s2.velocity.add(v1.clone().multiplyScalar(1 + rest)).sub(v2.clone().multiplyScalar(1 + rest));
@@ -540,14 +548,13 @@ function updateSpheres(deltaTime) {
             const vNormal = result.normal.dot(sphere.velocity);
             sphere.velocity.addScaledVector(
                 result.normal,
-                -vNormal * (1 + params.worldBounce) // rebote contra el mundo
+                -vNormal * (1 + params.worldBounce)
             );
             sphere.collider.center.add(result.normal.multiplyScalar(result.depth));
         } else {
             sphere.velocity.y -= GRAVITY * deltaTime;
         }
 
-        // Aplicar fricción del balón
         const damping = Math.exp(-params.ballDamping * deltaTime) - 1;
         sphere.velocity.addScaledVector(sphere.velocity, damping);
 
