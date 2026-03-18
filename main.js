@@ -761,9 +761,14 @@ loader.load(
         computeWorldInfo(model);
         worldOctree.fromGraphNode(model);
 
-        octreeHelper = new OctreeHelper(worldOctree);
-        octreeHelper.visible = params.showOctree;
-        scene.add(octreeHelper);
+        try {
+    octreeHelper = new OctreeHelper(worldOctree);
+    octreeHelper.visible = params.showOctree;
+    scene.add(octreeHelper);
+} catch (e) {
+    console.warn('No se pudo crear el OctreeHelper. Puede deberse a un octree muy grande o a un modelo complejo. El juego seguirá funcionando sin la visualización del octree.', e);
+    octreeHelper = null;
+}
 
         setPlayerSpawn();
     },
