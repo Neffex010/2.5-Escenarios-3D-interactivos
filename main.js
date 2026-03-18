@@ -242,7 +242,7 @@ for (let i = 0; i < NUM_SPHERES; i++) {
 // =========================
 // GUI reorganizado
 // =========================
-const gui = new GUI({ width: 300 });
+const gui = new GUI({ width: 270 });
 gui.title('Configuración FPS');
 gui.domElement.style.zIndex = '1000';
 gui.domElement.style.position = 'absolute';
